@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🏮 今日福气运势测算 🏮</title>
+    <style>
+        body {
+            margin: 0; padding: 0;
+            background-color: #990000; /* 中国红背景 */
+            color: #ffde4d; /* 金黄色文字 */
+            font-family: "Microsoft YaHei", sans-serif;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; box-sizing: border-box;
+        }
+        header {
+            text-align: center; margin-top: 30px;
+        }
+        h1 { font-size: 28px; color: #ffde4d; margin-bottom: 5px; text-shadow: 2px 2px 4px #000; }
+        .subtitle { font-size: 16px; color: #ffeb99; }
+
+        /* 签筒区域 */
+        .container {
+            flex: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; margin: 20px 0;
+        }
+        #box-img {
+            font-size: 80px; transition: transform 0.1s;
+            cursor: pointer; user-select: none;
+        }
+        /* 晃动动画 */
+        .shake {
+            animation: shakeAnim 0.5s infinite;
+        }
+        @keyframes shakeAnim {
+            0% { transform: rotate(0deg); }
+            20% { transform: rotate(-15deg); }
+            40% { transform: rotate(15deg); }
+            60% { transform: rotate(-15deg); }
+            80% { transform: rotate(15deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        #draw-btn {
+            background: linear-gradient(#ffde4d, #cc9900);
+            color: #900; border: 2px solid #fff; border-radius: 30px;
+            padding: 12px 40px; font-size: 22px; font-weight: bold;
+            margin-top: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+        #draw-btn:active { transform: scale(0.95); }
+
+        /* 抽签结果弹窗 */
+        #result-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center;
+        }
+        .card {
+            background-color: #fff; color: #333; width: 85%; max-width: 320px;
+            border: 6px double #900; border-radius: 15px; padding: 20px;
+            text-align: center; box-sizing: border-box; position: relative;
+        }
+        .card h2 { color: #d32f2f; margin-top: 0; font-size: 26px; border-bottom: 2px dashed #d32f2f; padding-bottom: 10px; }
+        .lucky-level { font-size: 36px; color: #d32f2f; font-weight: bold; margin: 15px 0; }
+        .details { text-align: left; background: #fff8f8; padding: 15px; border-radius: 8px; font-size: 18px; line-height: 1.6; }
+        .details strong { color: #cc0000; }
+        
+        .close-btn {
+            background: #d32f2f; color: white; border: none; padding: 10px 30px;
+            font-size: 18px; border-radius: 20px; margin-top: 20px; width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🏮 观音灵签 · 每日运势 🏮</h1>
+        <div class="subtitle">👉 虔诚祈福，日行一善，好运常伴 👈</div>
+    </header>
+
+    <div class="container">
+        <div id="box-img" onclick="startDraw()">🧧</div>
+        <button id="draw-btn" onclick="startDraw()">点击摇签测运势</button>
+    </div>
+
+    <div id="result-modal">
+        <div class="card">
+            <h2>✨ 今日圣签 ✨</h2>
+            <div class="lucky-level" id="res-luck">【大吉】</div>
+            <div class="details">
+                <p>🚩 <strong>今日总运：</strong><span id="res-all"></span></p>
+                <p>❤️ <strong>健康平安：</strong><span id="res-health"></span></p>
+                <p>💰 <strong>财富求利：</strong><span id="res-money"></span></p>
+                <p>🏡 <strong>家宅和睦：</strong><span id="res-home"></span></p>
+            </div>
+            <button class="close-btn" onclick="closeModal()">感恩收下好运</button>
+        </div>
+    </div>
+
+<script>
+    // 签文数据库（中老年最爱吉利话版）
+    const qianPool = [
+        {
+            luck: "【上上大吉】",
+            all: "紫气东来，喜事连连。今日诸事皆宜，出门见喜，多遇贵人相助。",
+            health: "神清气爽，身体安康。多走动、多喝水，福寿绵长。",
+            money: "财源广进，正财兴旺。买菜能得利，宽心必有福。",
+            home: "儿孙满堂笑语喧，家和万事万代兴，福气满家门。"
+        },
+        {
+            luck: "【福星高照】",
+            all: "福星临门，化险为夷。心中所想之事，今日多有转机，顺其自然即可。",
+            health: "筋骨舒展，气血红润。今日适合散步，保持心情愉悦。",
+            money: "勤俭持家自有财，不贪偏财，小财不断，衣食无忧。",
+            home: "多与老伴、儿女通电话，家宅平稳，子女贤孝。"
+        },
+        {
+            luck: "【如意大吉】",
+            all: "一帆风顺，万事如意。过去纠结的烦恼事，今日会渐渐消散，豁然开朗。",
+            health: "睡眠踏实，胃口大开。吃嘛嘛香，多吃蔬果益处多。",
+            money: "知足常乐，平安即是最大的财富，稳中有升。",
+            home: "家中有喜气围绕，邻里和睦，和气生财。"
+        },
+        {
+            luck: "【平安是福】",
+            all: "平平淡淡才是真，今日运势稳当。不急不躁，多行善事，多积福报。",
+            health: "注意防寒保暖（或防暑），饭后百步走，活到九十九。",
+            money: "不求大富大贵，只求安稳度日。稳扎稳打，手头宽裕。",
+            home: "长幼有序，家庭和美。多理解家人，家和则百顺。"
+        }
+    ];
+
+    let isDrawing = false;
+
+    function startDraw() {
+        if (isDrawing) return;
+        isDrawing = true;
+        
+        const box = document.getElementById("box-img");
+        const btn = document.getElementById("draw-btn");
+        
+        btn.innerText = "正在虔诚求签...";
+        box.classList.add("shake"); // 开始晃动
+
+        // 模拟摇签2秒钟
+        setTimeout(() => {
+            box.classList.remove("shake");
+            showResult();
+            btn.innerText = "点击摇签测运势";
+            isDrawing = false;
+        }, 1500);
+    }
+
+    function showResult() {
+        // 随机抽签
+        const randomIndex = Math.floor(Math.random() * qianPool.length);
+        const qian = qianPool[randomIndex];
+
+        // 填入数据
+        document.getElementById("res-luck").innerText = qian.luck;
+        document.getElementById("res-all").innerText = qian.all;
+        document.getElementById("res-health").innerText = qian.health;
+        document.getElementById("res-money").innerText = qian.money;
+        document.getElementById("res-home").innerText = qian.home;
+
+        // 显示弹窗
+        document.getElementById("result-modal").style.display = "flex";
+    }
+
+    function closeModal() {
+        document.getElementById("result-modal").style.display = "none";
+    }
+</script>
+</body>
+</html>
